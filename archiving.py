@@ -50,6 +50,7 @@ class MeshCrowd(object):
         index = map(int, index)
         index = list(index)
         while len(index) > 0:
+            # TODO 这里的循环缩进应该有问题，index[0]???
             index_same = [index[0]]  # 存放本次子循环中与index[0]粒子具有相同网格id所有检索位
             for i in range(1, len(index)):
                 if self.id_archiving[index[0]] == self.id_archiving[index[i]]:
@@ -61,12 +62,31 @@ class MeshCrowd(object):
 
 
 class Findgbest(MeshCrowd):
+    """
+    继承MeshCrowd类，计算拥挤度，在档案中查找全局最优
+    """
     def __init__(self, pop_size, pop_archiving, fit_archiving, pop_min, pop_max, mesh_div_num):
         super(Findgbest, self).__init__(pop_size, pop_archiving, fit_archiving, pop_min, pop_max, mesh_div_num)
         self.divide_archiving()
         self.get_crowd()
+        self.gbest_index = None
+
+    def get_gbest(self):
+        """
+        得到全局最优粒子的索引gbest_index和它的位置、适应度，注意gbest_pop、gbest_fit的维度，是pop_size行的，每行值相同
+        :return:
+        """
+        self.get_probability()
+        self.gbest_index = self.get_gbest_index()
+        for i in range(self.pop_size):
+            self.gbest_pop[i] = self.pop_archiving[self.gbest_index]
+            self.gbest_fit[i] = self.fit_archiving[self.gbest_index]  # TODO gbest的维度有问题，代码可优化
+        return self.gbest_pop, self.gbest_fit
 
     def get_probability(self):
+        """
+        计算档案中每个粒子被选中的率，和拥挤度有关，拥挤度的三次方，拥挤度越大，选中的概率越低
+        """
         for i in range(self.archive_size):
             self.probability_archiving = 10.0 / (self.crowd_archiving ** 3)
         self.probability_archiving = self.probability_archiving / np.sum(self.probability_archiving)  # 所有粒子的被选概率的总和为1
@@ -74,19 +94,15 @@ class Findgbest(MeshCrowd):
     def get_gbest_index(self):
         random_pro = random.uniform(0.0, 1.0)  # 生成一个0到1之间的随机数
         for i in range(self.archive_size):
+            # 采用轮盘赌的方式挑选全局最优粒子的索引
             if random_pro <= np.sum(self.probability_archiving[0:i + 1]):
-                return i  # 返回检索值
-
-    def get_gbest(self):
-        self.get_probability()
-        self.gbest_index = self.get_gbest_index()
-        for i in range(self.pop_size):
-            self.gbest_pop[i] = self.pop_archiving[self.gbest_index]  # gbest矩阵_坐标
-            self.gbest_fit[i] = self.fit_archiving[self.gbest_index]  # gbest矩阵_适应值
-        return self.gbest_pop, self.gbest_fit
+                return i  # 返回全局最优粒子的检索值
 
 
 class ClearArchiving(Findgbest):
+    """
+    继承Findgbest类，剔除档案中多余粒子
+    """
     def __init__(self, pop_size, pop_archive, fit_archive, min_, max_, mesh_div_num):
         super(Findgbest, self).__init__(pop_size, pop_archive, fit_archive, min_, max_, mesh_div_num)
         self.divide_archiving()
@@ -94,23 +110,33 @@ class ClearArchiving(Findgbest):
         self.thresh = None
         self.pop_archive = None
         self.fit_archive = None
+        self.del_probability_archive = None  # 粒子从档案中删除的概率
 
-    def get_probability(self):
+    def del_probability(self):
+        """
+        覆盖父类Findgbest中的方法
+        :return:
+        """
         for i in range(self.archive_size):
-            self.probability_archiving = self.crowd_archiving ** 2
+            # TODO 这个概率不对，被剔除的概率应该重新命名，不然覆盖掉父类的属性
+            self.del_probability_archive = 10.0/self.crowd_archiving ** 2
+        self.del_probability_archive = self.del_probability_archive / np.sum(self.probability_archiving)  # 所有粒子的被选概率的总和为1
 
-    def get_clear_index(self):  # 按概率清除粒子，拥挤度高的粒子被清除的概率越高
-        len_clear = self.pop_archive.shape[0] - self.thresh  # 需要清除掉的粒子数量
-        clear_index = []
-        while len(clear_index) < len_clear:
-            #################
+    def get_del_index(self):  #
+        """
+        按拥挤度剔除粒子，拥挤度高的粒子被清除的概率越高
+        :return: 要被剔除出档案的粒子索引
+        """
+        num_clear = self.pop_archive.shape[0] - self.thresh  # 需要剔除的粒子数量
+        del_index = []
+        while len(del_index) < num_clear:
             # random_pro = random.uniform(0.0, np.sum(self.probability_archiving))  # 生成一个0到1之间的随机数
             random_pro = random.uniform(0.0, 1.0)  # 生成一个0到1之间的随机数
             for i in range(self.archive_size):
-                if random_pro <= np.sum(self.probability_archiving[0:i + 1]):
-                    if i not in clear_index:
-                        clear_index.append(i)  # 记录检索值
-        return clear_index
+                if random_pro <= np.sum(self.del_probability_archive[0:i + 1]):
+                    if i not in del_index:
+                        del_index.append(i)  # 记录检索值
+        return del_index
 
     def del_pop(self, thresh: int) -> (float, float):
         """
@@ -120,8 +146,8 @@ class ClearArchiving(Findgbest):
         :return:
         """
         self.thresh = thresh
-        self.get_probability()
-        del_index = self.get_clear_index()
+        self.del_probability()  # 获得档案中每个粒子被剔除的概率
+        del_index = self.get_del_index()  # 返回数组，要剔除的索引
         self.pop_archive = np.delete(self.pop_archive, del_index, axis=0)
         self.fit_archive = np.delete(self.fit_archive, del_index, axis=0)
         return self.pop_archive, self.fit_archive
