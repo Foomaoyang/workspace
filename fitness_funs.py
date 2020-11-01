@@ -10,8 +10,10 @@ def test_func(individual):
     :param individual: 单个粒子，不是整个种群
     :return: 粒子的适应度值
     """
-    degree_45 = ((individual[0] - individual[1]) ** 2 / 2) ** 0.5
-    degree_135 = ((individual[0] + individual[1]) ** 2 / 2) ** 0.5
-    fit_1 = 1 - np.exp(-degree_45 ** 2 / 0.5) * np.exp(-(degree_135 - np.sqrt(200)) ** 2 / 250)
-    fit_2 = 1 - np.exp(-degree_45 ** 2 / 5) * np.exp(-degree_135 ** 2 / 350)
+    # degree_45 = ((individual[0] - individual[1]) ** 2 / 2) ** 0.5
+    # degree_135 = ((individual[0] + individual[1]) ** 2 / 2) ** 0.5
+    # fit_1 = 1 - np.exp(-degree_45 ** 2 / 0.5) * np.exp(-(degree_135 - np.sqrt(200)) ** 2 / 250)
+    # fit_2 = 1 - np.exp(-degree_45 ** 2 / 5) * np.exp(-degree_135 ** 2 / 350)
+    fit_1 = individual[0] ** 2
+    fit_2 = (individual[0] - 2) ** 2
     return [fit_1, fit_2]

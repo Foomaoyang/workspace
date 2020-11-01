@@ -17,6 +17,10 @@ https://blog.csdn.net/m0_38097087/article/details/79818348?utm_source=blogxgwz1&
 
 
 
+## 关于archiving.ClearArchiving.get_del_index()的解释
 
+#### 当档案中粒子数量过多时，就需要剔除多余的粒子
+
+MOPSO采用的轮盘赌的方法，计算档案中的粒子的拥挤度
 
 

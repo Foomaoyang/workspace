@@ -8,7 +8,9 @@ def update_v(pop, pop_p, pop_g, pop_v, v_min, v_max, w, c1, c2):
     """
     更新速度
     """
-    v = w * pop_v + c1 * (pop_p - pop) + c2 * (pop_g - pop)
+    # TODO 更该pop_g的维度
+    v = w * pop_v + random.uniform(0.0, 1.0) * c1 * (pop_p - pop) +\
+        random.uniform(0.0, 1.0) * c2 * (pop_g * np.ones((pop_v.shape[0], 1)) - pop)
     # 如果粒子的新速度大于最大值，则置为最大值；小于最小值，则置为最小值
     for i in range(v.shape[0]):
         for j in range(v.shape[1]):
@@ -63,12 +65,12 @@ def update_gbest(pop_size, pop_archiving, fit_archiving, pop_min, pop_max, mesh_
     return get_g.get_gbest()
 
 
-def update_archive(pop, pop_size, fitness, pop_archive, fit_archive, pop_min, pop_max, thresh, mesh_div):
+def update_archive(pop, fitness, pop_size, pop_archive, fit_archive, pop_min, pop_max, thresh, mesh_div):
     """
     种群更新后，经过三次筛选，构建Archive存档；三次筛选在论文中，通过Pareto非支配排序实现
     :param pop:
-    :param pop_size:
     :param fitness:
+    :param pop_size:
     :param pop_archive:
     :param fit_archive:
     :param pop_min:

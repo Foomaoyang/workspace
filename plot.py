@@ -12,8 +12,8 @@ class POF:
     """
     def __init__(self):
         # 绘制测试函数的曲面，（x1，x2）表示两位度的输入，（y1，y2）表示两位的适应值，
-        self.x1 = np.linspace(0, 10, 100)  # 0到10之间100个点
-        self.x2 = np.linspace(0, 10, 100)
+        self.x1 = np.linspace(-5, 5, 50)  # 0到10之间100个点
+        self.x2 = np.linspace(-5, 5, 50)
         self.x1, self.x2 = np.meshgrid(self.x1, self.x2)
         self.m, self.n = np.shape(self.x1)
         self.y1, self.y2 = np.zeros((self.m, self.n)), np.zeros((self.m, self.n))
@@ -55,8 +55,8 @@ class POF:
         ax2.scatter(pop_archive[:, 0], pop_archive[:, 1], fit_archive[:, 1], s=50, c='red', marker=".")
 
         ax3 = fig.add_subplot(133)
-        ax3.set_xlim((0, 1))
-        ax3.set_ylim((0, 1))
+        ax3.set_xlim((0, 25))
+        ax3.set_ylim((0, 25))
         ax3.set_xlabel('fitness_y1')
         ax3.set_ylabel('fitness_y2')
         ax3.scatter(fit[:, 0], fit[:, 1], s=10, c='blue', marker=".")

@@ -15,8 +15,8 @@ class MeshCrowd(object):
         self.crowd_archiving = np.zeros(self.archive_size)  # 拥挤度矩阵，用于记录当前粒子所在网格的总粒子数，检索位与curr_archiving的检索为相对应
         self.probability_archiving = np.zeros(self.archive_size)  # 各个粒子被选为gbest的概率，检索位与curr_archiving的检索位为相对应
         # TODO 种群的全局最优维度不对  gbest是100行，2列
-        self.gbest_pop = np.zeros((self.pop_size, self.pop_archiving.shape[1]))  # 初始化gbest矩阵_坐标和适应值
-        self.gbest_fit = np.zeros((self.pop_size, self.fit_archiving.shape[1]))  #
+        # self.gbest_pop = np.zeros((self.pop_size, self.pop_archiving.shape[1]))  # 初始化gbest矩阵_坐标和适应值
+        # self.gbest_fit = np.zeros((self.pop_size, self.fit_archiving.shape[1]))  #
 
     def divide_archiving(self):
         """
@@ -69,7 +69,7 @@ class Findgbest(MeshCrowd):
         super(Findgbest, self).__init__(pop_size, pop_archiving, fit_archiving, pop_min, pop_max, mesh_div_num)
         self.divide_archiving()
         self.get_crowd()
-        self.gbest_index = None
+        # self.gbest_index = None
 
     def get_gbest(self):
         """
@@ -78,9 +78,11 @@ class Findgbest(MeshCrowd):
         """
         self.get_probability()
         self.gbest_index = self.get_gbest_index()
-        for i in range(self.pop_size):
-            self.gbest_pop[i] = self.pop_archiving[self.gbest_index]
-            self.gbest_fit[i] = self.fit_archiving[self.gbest_index]  # TODO gbest的维度有问题，代码可优化
+        self.gbest_pop = self.pop_archiving[self.gbest_index]
+        self.gbest_fit = self.fit_archiving[self.gbest_index]
+        # for i in range(self.pop_size):
+        #     self.gbest_pop[i] = self.pop_archiving[self.gbest_index]
+        #     self.gbest_fit[i] = self.fit_archiving[self.gbest_index]  # TODO gbest的维度有问题，代码可优化
         return self.gbest_pop, self.gbest_fit
 
     def get_probability(self):
@@ -108,9 +110,9 @@ class ClearArchiving(Findgbest):
         self.divide_archiving()
         self.get_crowd()  # 计算网格拥挤度
         self.thresh = None
-        self.pop_archive = None
-        self.fit_archive = None
-        self.del_probability_archive = None  # 粒子从档案中删除的概率
+        self.pop_archive = pop_archive
+        self.fit_archive = fit_archive
+        # self.del_probability_archive = None  # 粒子从档案中删除的概率
 
     def del_probability(self):
         """
@@ -124,7 +126,7 @@ class ClearArchiving(Findgbest):
 
     def get_del_index(self):  #
         """
-        按拥挤度剔除粒子，拥挤度高的粒子被清除的概率越高
+        按拥挤度剔除粒子，拥挤度高的粒子被清除的概率越高。看Readme.md文档中剔除粒子部分
         :return: 要被剔除出档案的粒子索引
         """
         num_clear = self.pop_archive.shape[0] - self.thresh  # 需要剔除的粒子数量

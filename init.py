@@ -42,6 +42,6 @@ def init_gbest(pop_archive, fit_archive, mesh_div, pop_min, pop_max, pop_size):
 
 def init_archive(pop, fit):
     # 初始化时存档数量太少
-    # return pop, fit
+    #return pop, fit
     return pareto.Pareto(pop, fit).pareto_sort()
 

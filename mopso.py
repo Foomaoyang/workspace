@@ -23,9 +23,9 @@ class Mopso:
         self.pop_size = pop_size
         self.thresh, self.mesh_div = thresh, mesh_div
         self.pop_min, self.pop_max = pop_min, pop_max
-        self.max_v = (pop_min - pop_max) * 0.05  # 速度下限
-        self.min_v = (pop_min - pop_max) * 0.05 * (-1)  # 速度上限
-        self.plot_ = plot.POF()
+        self.max_v = (pop_max - pop_min) * 0.05  # 速度上限
+        self.min_v = self.max_v * (-1)  # 速度下限
+        self.POF = plot.POF()
         self.pop, self.pop_v = None, None  # 种群粒子的位置和速度
         self.pop_p, self.pop_g = None, None
         self.fit_p, self.fit_g = None, None
@@ -73,11 +73,11 @@ class Mopso:
         # 更新种群中每个粒子的个体最优
         self.pop_p, self.fit_p = update.update_pbest(self.pop, self.fitness, self.pop_p, self.fit_p)
         # 更新档案
-        self.pop_archive, self.fit_archive = update.update_archive(self.pop, self.pop_size, self.fitness,
+        self.pop_archive, self.fit_archive = update.update_archive(self.pop, self.fitness, self.pop_size,
                                                                    self.pop_archive, self.fit_archive, self.pop_min,
                                                                    self.pop_max, self.thresh, self.mesh_div)
         # 更新全局最优
-        # TODO 应该是一行两列,gbest维度不对
+        # TODO 应该是一行两列,gbest维度不对,改为一行两列
         self.pop_g, self.fit_g = update.update_gbest(self.pop_size, self.pop_archive, self.fit_archive, self.pop_min,
                                                      self.pop_max, self.mesh_div)
 
@@ -88,8 +88,8 @@ class Mopso:
         :return:返回迭代后的档案，在主程序中打印档案中的粒子，也即Pareto曲线的值
         """
         self.initialize()
-        self.plot_.draw(self.pop, self.fitness, self.pop_archive, self.fit_archive, -1)
+        self.POF.draw(self.pop, self.fitness, self.pop_archive, self.fit_archive, -1)
         for i in range(iterations):
             self.pop_update()  # 种群更新
-            self.plot_.draw(self.pop, self.fitness, self.pop_archive, self.fit_archive, i)
+            self.POF.draw(self.pop, self.fitness, self.pop_archive, self.fit_archive, i)
         return self.pop_archive, self.fit_archive
