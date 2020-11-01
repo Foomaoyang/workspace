@@ -41,7 +41,8 @@ def update_pbest(pop, fitness, pop_pbest, fit_pbest):
     """
     for i in range(fit_pbest.shape[0]):
         # 通过比较历史pbest和当前粒子适应值，决定是否需要更新pbest的值。
-        if compare_fit(fitness[i], fit_pbest[i]):  # 比大，如果比历史大就更新
+        # TODO 应该是适应度值小更新吧，和compare_fit()有关
+        if compare_fit(fitness[i], fit_pbest[i]):  # 比大，如果本代粒子适应度比历史大就更新
             pop_pbest[i] = pop[i]
             fit_pbest[i] = fitness[i]
     return pop_pbest, fit_pbest

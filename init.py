@@ -37,9 +37,11 @@ def init_pbest(pop, fitness):
 
 def init_gbest(pop_archive, fit_archive, mesh_div, pop_min, pop_max, pop_size):
     get_g = archiving.Findgbest(pop_size, pop_archive, fit_archive, pop_min, pop_max, mesh_div)
+    # TODO 初始化时全局最优粒子个数不对
     return get_g.get_gbest()
 
 
 def init_archive(pop, fit):
+    # 初始化时存档数量太少
     return pareto.Pareto(pop, fit).pareto_sort()
 
