@@ -6,47 +6,58 @@ from typing import List
 
 class MeshCrowd(object):
     def __init__(self, pop_size, pop_archiving, fit_archiving, pop_min, pop_max, mesh_div):
+        self.pop_size = pop_size
         self.pop_archiving, self.fit_archiving = pop_archiving, fit_archiving
         self.mesh_div = mesh_div  # 等分因子，默认值为10等分
-        self.pop_size = pop_size
+        self.mesh_min, self.mesh_max = pop_min, pop_max
         self.archive_size = self.pop_archiving.shape[0]  # Archive存档中粒子数量
-        self.id_archiving = np.zeros(self.archive_size)  # 各个粒子的id编号，检索位与curr_archiving的检索位为相对应
+        self.id_archiving = np.zeros(self.archive_size)  # 档案中每个粒子对应在网格里的id编号，检索位与curr_archiving的检索位为相对应
         self.crowd_archiving = np.zeros(self.archive_size)  # 拥挤度矩阵，用于记录当前粒子所在网格的总粒子数，检索位与curr_archiving的检索为相对应
         self.probability_archiving = np.zeros(self.archive_size)  # 各个粒子被选为gbest的概率，检索位与curr_archiving的检索位为相对应
-        self.gbest_pop = np.zeros((self.pop_size, self.pop_archiving.shape[1]))  # 初始化gbest矩阵_坐标
-        self.gbest_fit = np.zeros((self.pop_size, self.fit_archiving.shape[1]))  # 初始化gbest矩阵_适应值
-        self.mesh_min, self.mesh_max = pop_min, pop_max
+        # TODO 种群的全局最优维度不对  gbest是100行，2列
+        self.gbest_pop = np.zeros((self.pop_size, self.pop_archiving.shape[1]))  # 初始化gbest矩阵_坐标和适应值
+        self.gbest_fit = np.zeros((self.pop_size, self.fit_archiving.shape[1]))  #
 
     def divide_archiving(self):
         """
         进行网格划分，为每个粒子定义网格编号
-        :return:
         """
         for i in range(self.archive_size):
+            # 得到档案中每个粒子的id编号
             self.id_archiving[i] = self.cal_mesh_id(self.pop_archiving[i])
 
-    def cal_mesh_id(self, in_):
-        # 计算网格编号id
-        # 首先，将每个维度按照等分因子进行等分离散化，获取粒子在各维度上的编号。按照10进制将每一个维度编号等比相加（如过用户自定义了mesh_div_num的值，则按照自定义），计算出值
+    def cal_mesh_id(self, individual):
+        """
+        计算档案中第i个粒子的网格id编号，看Readme.md文档的get_crowd部分
+        首先，将每个维度按照等分因子进行等分离散化，获取粒子在各维度上的编号。按照10进制将每一个维度编号等比相加（如过用户自定义了mesh_div_num的值，则按照自定义），计算出值
+        :param individual: 档案中第i个粒子
+        :return: 档案中第i个粒子对应的网格id编号
+        """
         mesh_id = 0
-        for i in range(self.pop_archiving.shape[1]):
-            id_dim = int((in_[i] - self.mesh_min[i]) * self.archive_size / (self.mesh_max[i] - self.mesh_min[i]))
+        for i in range(self.pop_archiving.shape[1]):  # 注意是循环次数是由维度确定
+            id_dim = int((individual[i] - self.mesh_min[i]) * self.archive_size / (self.mesh_max[i] - self.mesh_min[i]))
             mesh_id = mesh_id + id_dim * (self.mesh_div ** i)
         return mesh_id
 
     def get_crowd(self):
-        index_ = (np.linspace(0, self.archive_size - 1, self.archive_size)).tolist()  # 定义一个数组存放粒子集的索引号，用于辅助计算
-        index_ = map(int, index_)
-        index_ = list(index_)
-        while len(index_) > 0:
-            index_same = [index_[0]]  # 存放本次子循环中与index[0]粒子具有相同网格id所有检索位
-            for i in range(1, len(index_)):
-                if self.id_archiving[index_[0]] == self.id_archiving[index_[i]]:
-                    index_same.append(index_[i])
-            number_ = len(index_same)  # 本轮网格中的总粒子数
-            for i in index_same:  # 更新本轮网格id下的所有粒子的拥挤度
-                self.crowd_archiving[i] = number_
-                index_.remove(i)  # 删除本轮网格所包含的粒子对应的索引号，避免重复计算
+        """
+        计算拥挤度,看Readme.md文档的get_crowd部分
+        将档案中的粒子全部编号，从0到archive_size-1。在同一个网格中的粒子，粒子的拥挤度设为粒子的数量。赋值完一个删除一个避免重复
+        """
+        # 定义一个数组存放粒子集的索引号，用于辅助计算
+        # index是[0,1,...,archive_size-1]的列表，
+        index = (np.linspace(0, self.archive_size - 1, self.archive_size)).tolist()
+        index = map(int, index)
+        index = list(index)
+        while len(index) > 0:
+            index_same = [index[0]]  # 存放本次子循环中与index[0]粒子具有相同网格id所有检索位
+            for i in range(1, len(index)):
+                if self.id_archiving[index[0]] == self.id_archiving[index[i]]:
+                    index_same.append(index[i])
+            same_num = len(index_same)  # 档案中其他粒子id号和第一个粒子的id号相同的数量，也即同一网孔中粒子数量
+            for i in index_same:  # 计算同一网格中粒子的拥挤度
+                self.crowd_archiving[i] = same_num  # 同一网孔里的粒子，它的拥挤度设为网孔中粒子数量。然后存到拥挤度档案中
+                index.remove(i)  # 在数组中删除已经赋值过拥挤度的粒子，避免重复计算
 
 
 class Findgbest(MeshCrowd):
@@ -79,7 +90,7 @@ class ClearArchiving(Findgbest):
     def __init__(self, pop_size, pop_archive, fit_archive, min_, max_, mesh_div_num):
         super(Findgbest, self).__init__(pop_size, pop_archive, fit_archive, min_, max_, mesh_div_num)
         self.divide_archiving()
-        self.get_crowd()
+        self.get_crowd()  # 计算网格拥挤度
         self.thresh = None
         self.pop_archive = None
         self.fit_archive = None
