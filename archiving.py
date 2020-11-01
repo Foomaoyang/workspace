@@ -80,7 +80,6 @@ class ClearArchiving(Findgbest):
         super(Findgbest, self).__init__(pop_size, pop_archive, fit_archive, min_, max_, mesh_div_num)
         self.divide_archiving()
         self.get_crowd()
-        self.archiving_size = None
         self.thresh = None
         self.pop_archive = None
         self.fit_archive = None
@@ -102,8 +101,14 @@ class ClearArchiving(Findgbest):
                         clear_index.append(i)  # 记录检索值
         return clear_index
 
-    def del_pop(self, thresh: int, archiving_size: int) -> (float, float):
-        self.thresh, self.archiving_size = thresh, archiving_size
+    def del_pop(self, thresh: int) -> (float, float):
+        """
+        剔除档案中多余粒子
+        当档案中的粒子数量超过thresh阈值时删除一定数量的非支配粒子
+        :param thresh: 档案大小
+        :return:
+        """
+        self.thresh = thresh
         self.get_probability()
         del_index = self.get_clear_index()
         self.pop_archive = np.delete(self.pop_archive, del_index, axis=0)
